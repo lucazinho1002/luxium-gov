@@ -1,0 +1,56 @@
+name: Deploy Luxium no GitHub Pages
+
+on:
+  # Roda automaticamente a cada commit enviado para a branch main ou master
+  push:
+    branches:
+      - main
+      - master
+  # Permite rodar manualmente pela aba Actions do GitHub
+  workflow_dispatch:
+
+# Permissões necessárias para publicar no GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Garante que apenas um deploy aconteça por vez
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Rodar o build/start
+        run: npm start
+
+      - name: Configurar artefatos do GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Enviar arquivos estáticos
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist' # Altere aqui se o seu build gerar os arquivos em outra pasta (ex: './')
+
+      - name: Publicar no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
